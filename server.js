@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { pool, init, verifyPassword } from "./lib.js";
 
 const PORT = process.env.PORT || 10000, PROD = process.env.NODE_ENV === "production";
-const PUB = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
+const ROOT = path.dirname(fileURLToPath(import.meta.url)), PUB = path.join(ROOT, "public");
 const STATUS = ["new", "contacted", "scheduled", "won", "lost"];
 const SECRET = process.env.SESSION_SECRET || (console.warn("SESSION_SECRET missing: sessions reset on restart"), randomBytes(32).toString("hex"));
 
@@ -18,9 +18,14 @@ else console.warn("DATABASE_URL missing: bookings and login are disabled");
 const FILES = { "/": "index.html", "/index.html": "index.html", "/dashboard.html": "dashboard.html", "/dashboard": "dashboard.html",
   "/manifest.webmanifest": "manifest.webmanifest", "/sw.js": "sw.js", "/icons/icon.svg": "icons/icon.svg" };
 const TYPES = { html: "text/html; charset=utf-8", webmanifest: "application/manifest+json", js: "text/javascript; charset=utf-8", svg: "image/svg+xml" };
+const ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#0a0a0a"/><path d="M256 104l128 150h-84v154h-88V254h-84z" fill="#fff"/></svg>';
 const assets = new Map();
 for (const [url, f] of Object.entries(FILES)) {
-  const buf = await readFile(path.join(PUB, f));
+  // يبحث في public/ ثم في الجذر (يتسامح مع الرفع المسطّح إلى GitHub)
+  let buf = null;
+  for (const fp of [path.join(PUB, f), path.join(ROOT, f), path.join(ROOT, path.basename(f))]) { try { buf = await readFile(fp); break } catch {} }
+  if (!buf && f === "icons/icon.svg") buf = Buffer.from(ICON);
+  if (!buf) { console.warn("missing file (skipped): " + f); continue; }
   assets.set(url, { buf, gz: gzipSync(buf), type: TYPES[f.split(".").pop()], cc: /\.(html|js)$/.test(f) ? "no-cache" : "public, max-age=86400" });
 }
 
