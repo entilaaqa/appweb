@@ -1,0 +1,17 @@
+{
+  "name": "entilaaqa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@vercel/node": "^30.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}
